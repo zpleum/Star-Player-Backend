@@ -265,7 +265,7 @@ const downloadAudio = async (req, res) => {
 };
 
 const getProgress = (req, res) => {
-  const { taskId } = req.params;
+  const taskId = req.query.taskId || req.params.taskId;
   const tempDir = os.tmpdir();
   const progressPath = path.join(tempDir, `star-player-progress-${taskId}.json`);
 

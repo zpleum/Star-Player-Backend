@@ -4,6 +4,6 @@ const youtubeController = require('../controllers/youtubeController');
 
 router.get('/info', youtubeController.getInfo);
 router.post('/download', youtubeController.downloadAudio);
-router.get('/progress/:taskId', youtubeController.getProgress);
+router.get('/progress', youtubeController.getProgress);
 
 module.exports = router;

@@ -24,6 +24,12 @@ app.get('/', (req, res) => {
   res.json({ message: 'Star Player Backend is running' });
 });
 
+// Cron job endpoint to keep Render free tier awake
+app.get('/api/cron', (req, res) => {
+  console.log('Cron ping received to keep server awake');
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
