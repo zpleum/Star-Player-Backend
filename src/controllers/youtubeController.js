@@ -58,12 +58,14 @@ if (process.env.YOUTUBE_COOKIES) {
         const value = c.value || '';
         
         if (domain && name) {
-          netscapeContent += `${domain}\t${includeSubdomains}\t${path}\t${secure}\t${expiry}\t${name}\t${value}\n`;
+          // Standard Netscape format with #HttpOnly_ prefix for httpOnly cookies
+          const domainPrefix = c.httpOnly ? '#HttpOnly_' : '';
+          netscapeContent += `${domainPrefix}${domain}\t${includeSubdomains}\t${path}\t${secure}\t${expiry}\t${name}\t${value}\n`;
         }
       });
       
       cookieContent = netscapeContent;
-      console.log('Successfully converted JSON cookies to Netscape format');
+      console.log('Successfully converted JSON cookies to Netscape format (with HttpOnly support)');
     } catch (e) {
       console.error('Failed to parse JSON cookies:', e.message);
     }
@@ -101,6 +103,7 @@ const getInfo = async (req, res) => {
       ignoreConfig: true,
       format: 'all',
       userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      extractorArgs: 'youtube:player-client=ios,web',
     };
 
     if (fs.existsSync(cookiesPath)) {
@@ -164,6 +167,7 @@ const downloadAudio = async (req, res) => {
       noPlaylist: true,
       ignoreConfig: true,
       userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      extractorArgs: 'youtube:player-client=ios,web',
       ffmpegLocation: ffmpegDir,
     };
 
