@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const { promisify } = require('util');
-const { exec } = require('child_process');
+const { exec, execFile } = require('child_process');
 
 const execAsync = promisify(exec);
 
