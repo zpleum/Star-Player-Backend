@@ -27,19 +27,48 @@ let cookiesPath = path.join(process.cwd(), 'cookies.txt');
 // If cookies are provided via environment variable, write them to a temp file
 if (process.env.YOUTUBE_COOKIES) {
   const tempCookiesPath = path.join(os.tmpdir(), `star-player-cookies-${Math.random().toString(36).substring(7)}.txt`);
-  let cookieContent = process.env.YOUTUBE_COOKIES;
+  let cookieContent = process.env.YOUTUBE_COOKIES.trim();
 
-  // Check if it's Base64 (doesn't contain tabs which are required in Netscape format)
-  if (cookieContent && !cookieContent.includes('\t')) {
+  // 1. Check if it's Base64
+  if (cookieContent && !cookieContent.includes('\t') && !cookieContent.startsWith('[') && !cookieContent.startsWith('{')) {
     try {
       const decoded = Buffer.from(cookieContent, 'base64').toString('utf-8');
-      if (decoded.includes('\t')) {
-        cookieContent = decoded;
+      if (decoded.includes('\t') || decoded.includes('# Netscape') || decoded.trim().startsWith('[')) {
+        cookieContent = decoded.trim();
         console.log('Detected and decoded Base64 YouTube cookies');
       }
+    } catch (e) {}
+  }
+
+  // 2. Check if it's JSON and convert to Netscape format
+  if (cookieContent.startsWith('[') || cookieContent.startsWith('{')) {
+    try {
+      const jsonCookies = JSON.parse(cookieContent);
+      const cookiesArray = Array.isArray(jsonCookies) ? jsonCookies : [jsonCookies];
+      
+      let netscapeContent = '# Netscape HTTP Cookie File\n';
+      cookiesArray.forEach(c => {
+        const domain = c.domain || '';
+        const includeSubdomains = domain.startsWith('.') ? 'TRUE' : 'FALSE';
+        const path = c.path || '/';
+        const secure = c.secure ? 'TRUE' : 'FALSE';
+        const expiry = Math.floor(c.expirationDate || c.expiry || 0);
+        const name = c.name || '';
+        const value = c.value || '';
+        
+        netscapeContent += `${domain}\t${includeSubdomains}\t${path}\t${secure}\t${expiry}\t${name}\t${value}\n`;
+      });
+      
+      cookieContent = netscapeContent;
+      console.log('Successfully converted JSON cookies to Netscape format');
     } catch (e) {
-      // Not base64 or failed to decode, use original
+      console.error('Failed to parse JSON cookies:', e.message);
     }
+  }
+
+  // 3. Ensure the content starts with the required Netscape header
+  if (cookieContent && !cookieContent.trim().startsWith('# Netscape')) {
+    cookieContent = `# Netscape HTTP Cookie File\n${cookieContent}`;
   }
 
   try {
@@ -64,10 +93,8 @@ const getInfo = async (req, res) => {
     const infoOptions = {
       dumpJson: true,
       noWarnings: true,
-      callHome: false,
       noCheckCertificates: true,
       preferFreeFormats: true,
-      youtubeSkipDashManifest: true,
       noPlaylist: true,
     };
 
@@ -128,7 +155,6 @@ const downloadAudio = async (req, res) => {
       audioQuality: 0,
       output: outputPath,
       noWarnings: true,
-      callHome: false,
       noCheckCertificates: true,
       noPlaylist: true,
       ffmpegLocation: ffmpegDir,
