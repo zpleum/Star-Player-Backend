@@ -117,7 +117,6 @@ const getInfo = async (req, res) => {
       '--no-playlist',
       '--ignore-config',
       '--no-cache-dir',
-      '--format', 'best',
       '--extractor-args', 'youtube:player-client=android',
     ];
 
@@ -130,7 +129,6 @@ const getInfo = async (req, res) => {
     execFile(ytDlpPath, args, { timeout: 40000, maxBuffer: 10 * 1024 * 1024 }, (error, stdout, stderr) => {
       if (error) {
         console.error('Raw yt-dlp error:', error.message);
-        console.error('Raw stderr:', stderr);
         return res.status(500).json({ error: 'Failed to fetch video info', details: stderr });
       }
 
@@ -211,8 +209,8 @@ const downloadAudio = async (req, res) => {
       noPlaylist: true,
       ignoreConfig: true,
       noCacheDir: true,
-      format: 'bestaudio/best',
-      extractorArgs: 'youtube:player-client=android',
+      format: 'bestaudio/best', 
+      extractorArgs: 'youtube:player-client=android,ios',
       ffmpegLocation: ffmpegDir,
     };
 
