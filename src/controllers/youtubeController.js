@@ -49,14 +49,17 @@ if (process.env.YOUTUBE_COOKIES) {
       let netscapeContent = '# Netscape HTTP Cookie File\n';
       cookiesArray.forEach(c => {
         const domain = c.domain || '';
-        const includeSubdomains = domain.startsWith('.') ? 'TRUE' : 'FALSE';
+        // If hostOnly is false, it means it's a domain cookie (TRUE for subdomains)
+        const includeSubdomains = (c.hostOnly === false || domain.startsWith('.')) ? 'TRUE' : 'FALSE';
         const path = c.path || '/';
-        const secure = c.secure ? 'TRUE' : 'FALSE';
+        const secure = (c.secure || c.isSecure) ? 'TRUE' : 'FALSE';
         const expiry = Math.floor(c.expirationDate || c.expiry || 0);
         const name = c.name || '';
         const value = c.value || '';
         
-        netscapeContent += `${domain}\t${includeSubdomains}\t${path}\t${secure}\t${expiry}\t${name}\t${value}\n`;
+        if (domain && name) {
+          netscapeContent += `${domain}\t${includeSubdomains}\t${path}\t${secure}\t${expiry}\t${name}\t${value}\n`;
+        }
       });
       
       cookieContent = netscapeContent;
@@ -94,7 +97,6 @@ const getInfo = async (req, res) => {
       dumpJson: true,
       noWarnings: true,
       noCheckCertificates: true,
-      preferFreeFormats: true,
       noPlaylist: true,
     };
 
