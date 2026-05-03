@@ -4,6 +4,8 @@ const fs = require('fs');
 const os = require('os');
 const { promisify } = require('util');
 const { exec, execFile } = require('child_process');
+const { generate } = require('youtube-po-token-generator');
+
 
 const execAsync = promisify(exec);
 
@@ -120,6 +122,17 @@ const getInfo = async (req, res) => {
       '--js-runtimes', 'node',
     ];
 
+    try {
+      console.log('Generating PO Token...');
+      const { visitorData, poToken } = await generate();
+      console.log('Successfully generated PO Token and Visitor Data');
+      // Pass the tokens to yt-dlp
+      args.push('--extractor-args', `youtube:po_token=web+${poToken};visitor_data=${visitorData}`);
+    } catch (e) {
+      console.error('Warning: Failed to generate PO token (continuing without it):', e.message);
+    }
+
+
     if (fs.existsSync(cookiesPath)) {
       args.push('--cookies', cookiesPath);
     }
@@ -213,6 +226,16 @@ const downloadAudio = async (req, res) => {
       jsRuntimes: 'node',
       ffmpegLocation: ffmpegDir,
     };
+
+    try {
+      console.log('Generating PO Token for download...');
+      const { visitorData, poToken } = await generate();
+      console.log('Successfully generated PO Token and Visitor Data');
+      ytOptions.extractorArgs = `youtube:po_token=web+${poToken};visitor_data=${visitorData}`;
+    } catch (e) {
+      console.error('Warning: Failed to generate PO token for download:', e.message);
+    }
+
 
     if (fs.existsSync(cookiesPath)) {
       ytOptions.cookies = cookiesPath;
