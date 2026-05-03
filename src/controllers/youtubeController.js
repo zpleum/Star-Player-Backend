@@ -108,7 +108,13 @@ const getInfo = async (req, res) => {
 
     if (fs.existsSync(cookiesPath)) {
       infoOptions.cookies = cookiesPath;
+      console.log(`Using cookies from: ${cookiesPath} (Size: ${fs.statSync(cookiesPath).size} bytes)`);
+    } else {
+      console.log('No cookies file found at:', cookiesPath);
     }
+
+    console.log(`Running yt-dlp info for: ${url}`);
+    console.log(`Binary path: ${ytDlpPath} (Exists: ${fs.existsSync(ytDlpPath)})`);
 
     const info = await youtubedl(url, infoOptions);
 
@@ -118,7 +124,13 @@ const getInfo = async (req, res) => {
       duration: info.duration,
     });
   } catch (error) {
-    console.error('youtube-dl info error:', error);
+    console.error('youtube-dl info error detail:', {
+      message: error.message,
+      command: error.command,
+      stderr: error.stderr,
+      stdout: error.stdout,
+      exitCode: error.exitCode
+    });
     res.status(500).json({ error: 'Failed to fetch video info' });
   }
 };
