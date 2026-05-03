@@ -22,6 +22,35 @@ if (!isWindows && fs.existsSync(ytDlpPath)) {
   }
 }
 
+let cookiesPath = path.join(process.cwd(), 'cookies.txt');
+
+// If cookies are provided via environment variable, write them to a temp file
+if (process.env.YOUTUBE_COOKIES) {
+  const tempCookiesPath = path.join(os.tmpdir(), `star-player-cookies-${Math.random().toString(36).substring(7)}.txt`);
+  let cookieContent = process.env.YOUTUBE_COOKIES;
+
+  // Check if it's Base64 (doesn't contain tabs which are required in Netscape format)
+  if (cookieContent && !cookieContent.includes('\t')) {
+    try {
+      const decoded = Buffer.from(cookieContent, 'base64').toString('utf-8');
+      if (decoded.includes('\t')) {
+        cookieContent = decoded;
+        console.log('Detected and decoded Base64 YouTube cookies');
+      }
+    } catch (e) {
+      // Not base64 or failed to decode, use original
+    }
+  }
+
+  try {
+    fs.writeFileSync(tempCookiesPath, cookieContent);
+    cookiesPath = tempCookiesPath;
+    console.log('Using YouTube cookies from environment variable');
+  } catch (e) {
+    console.error('Failed to write temporary cookies file:', e);
+  }
+}
+
 const youtubedl = create(ytDlpPath);
 
 const getInfo = async (req, res) => {
@@ -32,7 +61,7 @@ const getInfo = async (req, res) => {
   }
 
   try {
-    const info = await youtubedl(url, {
+    const infoOptions = {
       dumpJson: true,
       noWarnings: true,
       callHome: false,
@@ -40,7 +69,13 @@ const getInfo = async (req, res) => {
       preferFreeFormats: true,
       youtubeSkipDashManifest: true,
       noPlaylist: true,
-    });
+    };
+
+    if (fs.existsSync(cookiesPath)) {
+      infoOptions.cookies = cookiesPath;
+    }
+
+    const info = await youtubedl(url, infoOptions);
 
     res.json({
       title: info.title,
@@ -87,7 +122,6 @@ const downloadAudio = async (req, res) => {
       fs.chmodSync(destFfmpeg, 0o755);
       fs.chmodSync(destFfprobe, 0o755);
     }
-
     const ytOptions = {
       extractAudio: true,
       audioFormat: 'mp3',
@@ -99,6 +133,10 @@ const downloadAudio = async (req, res) => {
       noPlaylist: true,
       ffmpegLocation: ffmpegDir,
     };
+
+    if (fs.existsSync(cookiesPath)) {
+      ytOptions.cookies = cookiesPath;
+    }
 
     if (taskId) {
       const progressPath = path.join(tempDir, `star-player-progress-${taskId}.json`);
