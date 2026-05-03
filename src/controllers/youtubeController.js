@@ -109,43 +109,46 @@ const getInfo = async (req, res) => {
   }
 
   try {
-    const infoOptions = {
-      dumpJson: true,
-      noWarnings: true,
-      noCheckCertificates: true,
-      noPlaylist: true,
-      ignoreConfig: true,
-      format: 'all',
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-      extractorArgs: 'youtube:player-client=ios,web',
-    };
+    const args = [
+      url,
+      '--dump-json',
+      '--no-warnings',
+      '--no-check-certificates',
+      '--no-playlist',
+      '--ignore-config',
+      '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      '--extractor-args', 'youtube:player-client=ios,web',
+    ];
 
     if (fs.existsSync(cookiesPath)) {
-      infoOptions.cookies = cookiesPath;
-      console.log(`Using cookies from: ${cookiesPath} (Size: ${fs.statSync(cookiesPath).size} bytes)`);
-    } else {
-      console.log('No cookies file found at:', cookiesPath);
+      args.push('--cookies', cookiesPath);
     }
 
-    console.log(`Running yt-dlp info for: ${url}`);
-    console.log(`Binary path: ${ytDlpPath} (Exists: ${fs.existsSync(ytDlpPath)})`);
+    console.log(`Executing raw yt-dlp: ${ytDlpPath} ${args.join(' ')}`);
 
-    const info = await youtubedl(url, infoOptions);
+    execFile(ytDlpPath, args, { timeout: 40000, maxBuffer: 10 * 1024 * 1024 }, (error, stdout, stderr) => {
+      if (error) {
+        console.error('Raw yt-dlp error:', error.message);
+        console.error('Raw stderr:', stderr);
+        return res.status(500).json({ error: 'Failed to fetch video info', details: stderr });
+      }
 
-    res.json({
-      title: info.title,
-      thumbnail: info.thumbnail,
-      duration: info.duration,
+      try {
+        const info = JSON.parse(stdout);
+        res.json({
+          title: info.title,
+          thumbnail: info.thumbnail,
+          duration: info.duration,
+        });
+      } catch (parseError) {
+        console.error('Failed to parse yt-dlp output:', parseError.message);
+        res.status(500).json({ error: 'Failed to parse video info' });
+      }
     });
+
   } catch (error) {
-    console.error('youtube-dl info error detail:', {
-      message: error.message,
-      command: error.command,
-      stderr: error.stderr,
-      stdout: error.stdout,
-      exitCode: error.exitCode
-    });
-    res.status(500).json({ error: 'Failed to fetch video info' });
+    console.error('Unexpected getInfo error:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
