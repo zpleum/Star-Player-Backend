@@ -117,6 +117,7 @@ const getInfo = async (req, res) => {
       '--no-playlist',
       '--ignore-config',
       '--no-cache-dir',
+      '--js-runtimes', 'node',
     ];
 
     if (fs.existsSync(cookiesPath)) {
@@ -209,6 +210,7 @@ const downloadAudio = async (req, res) => {
       ignoreConfig: true,
       noCacheDir: true,
       format: 'bestaudio/best', 
+      jsRuntimes: 'node',
       ffmpegLocation: ffmpegDir,
     };
 
