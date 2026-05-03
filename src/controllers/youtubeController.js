@@ -116,8 +116,7 @@ const getInfo = async (req, res) => {
       '--no-check-certificates',
       '--no-playlist',
       '--ignore-config',
-      '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-      '--extractor-args', 'youtube:player-client=ios,web',
+      '--extractor-args', 'youtube:player-client=mweb,web',
     ];
 
     if (fs.existsSync(cookiesPath)) {
@@ -209,8 +208,7 @@ const downloadAudio = async (req, res) => {
       noCheckCertificates: true,
       noPlaylist: true,
       ignoreConfig: true,
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-      extractorArgs: 'youtube:player-client=ios,web',
+      extractorArgs: 'youtube:player-client=mweb,web',
       ffmpegLocation: ffmpegDir,
     };
 
