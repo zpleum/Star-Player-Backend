@@ -7,8 +7,21 @@ const { exec } = require('child_process');
 
 const execAsync = promisify(exec);
 
+const isWindows = process.platform === 'win32';
+const ytDlpBinary = isWindows ? 'yt-dlp.exe' : 'yt-dlp';
+
 // Resolve the binary path correctly
-const ytDlpPath = path.join(process.cwd(), 'node_modules', 'youtube-dl-exec', 'bin', 'yt-dlp.exe');
+const ytDlpPath = path.join(process.cwd(), 'node_modules', 'youtube-dl-exec', 'bin', ytDlpBinary);
+
+// Ensure executable permissions on Linux/macOS
+if (!isWindows && fs.existsSync(ytDlpPath)) {
+  try {
+    fs.chmodSync(ytDlpPath, 0o755);
+  } catch (e) {
+    console.warn('Failed to set permissions on yt-dlp binary:', e.message);
+  }
+}
+
 const youtubedl = create(ytDlpPath);
 
 const getInfo = async (req, res) => {
@@ -56,14 +69,24 @@ const downloadAudio = async (req, res) => {
     if (!fs.existsSync(ffmpegDir)) {
       fs.mkdirSync(ffmpegDir, { recursive: true });
     }
-    const destFfmpeg = path.join(ffmpegDir, 'ffmpeg.exe');
-    const destFfprobe = path.join(ffmpegDir, 'ffprobe.exe');
+    const ffmpegBinary = isWindows ? 'ffmpeg.exe' : 'ffmpeg';
+    const ffprobeBinary = isWindows ? 'ffprobe.exe' : 'ffprobe';
+
+    const destFfmpeg = path.join(ffmpegDir, ffmpegBinary);
+    const destFfprobe = path.join(ffmpegDir, ffprobeBinary);
     
-    const ffmpegPath = path.join(process.cwd(), 'node_modules', 'ffmpeg-static', 'ffmpeg.exe');
-    const ffprobePath = path.join(process.cwd(), 'node_modules', 'ffprobe-static', 'bin', 'win32', 'x64', 'ffprobe.exe');
+    // Use the paths from the static packages
+    const ffmpegPath = require('ffmpeg-static');
+    const ffprobePath = require('ffprobe-static').path;
     
-    if (!fs.existsSync(destFfmpeg)) fs.copyFileSync(ffmpegPath, destFfmpeg);
-    if (!fs.existsSync(destFfprobe)) fs.copyFileSync(ffprobePath, destFfprobe);
+    if (!fs.existsSync(destFfmpeg) && ffmpegPath) fs.copyFileSync(ffmpegPath, destFfmpeg);
+    if (!fs.existsSync(destFfprobe) && ffprobePath) fs.copyFileSync(ffprobePath, destFfprobe);
+
+    // Ensure permissions on Linux/macOS
+    if (!isWindows) {
+      fs.chmodSync(destFfmpeg, 0o755);
+      fs.chmodSync(destFfprobe, 0o755);
+    }
 
     const ytOptions = {
       extractAudio: true,
