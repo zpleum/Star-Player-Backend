@@ -88,10 +88,24 @@ if (process.env.YOUTUBE_COOKIES) {
 const youtubedl = create(ytDlpPath);
 
 const getInfo = async (req, res) => {
-  const { url } = req.query;
+  let { url } = req.query;
 
   if (!url) {
     return res.status(400).json({ error: 'URL is required' });
+  }
+
+  // Clean URL to prevent yt-dlp from trying to parse playlists/radio
+  try {
+    if (url.includes('youtube.com/watch')) {
+      const urlObj = new URL(url);
+      const v = urlObj.searchParams.get('v');
+      if (v) {
+        url = `https://www.youtube.com/watch?v=${v}`;
+        console.log(`Cleaned URL to: ${url}`);
+      }
+    }
+  } catch (e) {
+    console.warn('Failed to clean URL:', e.message);
   }
 
   try {
@@ -137,10 +151,24 @@ const getInfo = async (req, res) => {
 
 const downloadAudio = async (req, res) => {
   try {
-    const { url, taskId } = req.body;
+    let { url, taskId } = req.body;
 
     if (!url) {
       return res.status(400).json({ error: 'URL is required' });
+    }
+
+    // Clean URL
+    try {
+      if (url.includes('youtube.com/watch')) {
+        const urlObj = new URL(url);
+        const v = urlObj.searchParams.get('v');
+        if (v) {
+          url = `https://www.youtube.com/watch?v=${v}`;
+          console.log(`Cleaned download URL to: ${url}`);
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to clean download URL:', e.message);
     }
 
     const tempId = Math.random().toString(36).substring(7);
