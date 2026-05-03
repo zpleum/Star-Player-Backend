@@ -117,6 +117,7 @@ const getInfo = async (req, res) => {
       '--no-playlist',
       '--ignore-config',
       '--no-cache-dir',
+      '--format', 'bestaudio/best',
       '--extractor-args', 'youtube:player-client=android',
     ];
 
@@ -210,7 +211,7 @@ const downloadAudio = async (req, res) => {
       ignoreConfig: true,
       noCacheDir: true,
       format: 'bestaudio/best', 
-      extractorArgs: 'youtube:player-client=android,ios',
+      extractorArgs: 'youtube:player-client=android',
       ffmpegLocation: ffmpegDir,
     };
 
