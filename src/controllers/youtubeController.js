@@ -117,7 +117,8 @@ const getInfo = async (req, res) => {
       '--no-playlist',
       '--ignore-config',
       '--no-cache-dir',
-      '--extractor-args', 'youtube:player-client=tv',
+      '--format', 'best',
+      '--extractor-args', 'youtube:player-client=android',
     ];
 
     if (fs.existsSync(cookiesPath)) {
@@ -210,7 +211,8 @@ const downloadAudio = async (req, res) => {
       noPlaylist: true,
       ignoreConfig: true,
       noCacheDir: true,
-      extractorArgs: 'youtube:player-client=tv',
+      format: 'bestaudio/best',
+      extractorArgs: 'youtube:player-client=android',
       ffmpegLocation: ffmpegDir,
     };
 
