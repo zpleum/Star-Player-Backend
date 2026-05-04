@@ -153,17 +153,11 @@ const getInfo = async (req, res) => {
     const pot = await fetchPoToken(url);
     if (pot && pot.poToken && pot.visitorData) {
       console.log('Successfully received PO Token from provider!');
-      args.push(
-        '--extractor-args', `youtube:po_token=web+${pot.poToken}`,
-        '--extractor-args', `youtube:visitor_data=${pot.visitorData}`
-      );
+      args.push('--extractor-args', `youtube:po_token=web+${pot.poToken}`);
       hasPoToken = true;
     } else if (process.env.YOUTUBE_PO_TOKEN && process.env.YOUTUBE_VISITOR_DATA) {
       console.log('Using manual PO Token from environment');
-      args.push(
-        '--extractor-args', `youtube:po_token=web+${process.env.YOUTUBE_PO_TOKEN}`,
-        '--extractor-args', `youtube:visitor_data=${process.env.YOUTUBE_VISITOR_DATA}`
-      );
+      args.push('--extractor-args', `youtube:po_token=web+${process.env.YOUTUBE_PO_TOKEN}`);
       hasPoToken = true;
     }
 
@@ -267,17 +261,11 @@ const downloadAudio = async (req, res) => {
     const pot = await fetchPoToken(url);
     if (pot && pot.poToken && pot.visitorData) {
       console.log('Successfully received PO Token from provider for download!');
-      ytOptions.extractorArgs = [
-        `youtube:po_token=web+${pot.poToken}`,
-        `youtube:visitor_data=${pot.visitorData}`
-      ];
+      ytOptions.extractorArgs = `youtube:po_token=web+${pot.poToken}`;
       hasPoTokenForDownload = true;
     } else if (process.env.YOUTUBE_PO_TOKEN && process.env.YOUTUBE_VISITOR_DATA) {
       console.log('Using manual PO Token from environment for download');
-      ytOptions.extractorArgs = [
-        `youtube:po_token=web+${process.env.YOUTUBE_PO_TOKEN}`,
-        `youtube:visitor_data=${process.env.YOUTUBE_VISITOR_DATA}`
-      ];
+      ytOptions.extractorArgs = `youtube:po_token=web+${process.env.YOUTUBE_PO_TOKEN}`;
       hasPoTokenForDownload = true;
     }
 
