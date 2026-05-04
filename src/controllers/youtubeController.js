@@ -167,10 +167,9 @@ const getInfo = async (req, res) => {
       hasPoToken = true;
     }
 
-    // Only inject cookies if NO PO Token is used.
-    // Sending authenticated cookies with an anonymous PO Token causes a session mismatch and triggers bot detection!
-    if (!hasPoToken && fs.existsSync(cookiesPath)) {
-
+    // Always inject cookies to authenticate with YouTube.
+    // The PO token proves the session is legitimate but cookies prove the identity.
+    if (fs.existsSync(cookiesPath)) {
       args.push('--cookies', cookiesPath);
     }
 
@@ -282,8 +281,7 @@ const downloadAudio = async (req, res) => {
       hasPoTokenForDownload = true;
     }
 
-    if (!hasPoTokenForDownload && fs.existsSync(cookiesPath)) {
-
+    if (fs.existsSync(cookiesPath)) {
       ytOptions.cookies = cookiesPath;
     }
 
