@@ -149,16 +149,21 @@ const getInfo = async (req, res) => {
       '--js-runtimes', 'node',
     ];
 
+    let hasPoToken = false;
     const pot = await fetchPoToken(url);
     if (pot && pot.poToken && pot.visitorData) {
       console.log('Successfully received PO Token from provider!');
       args.push('--extractor-args', `youtube:po_token=web+${pot.poToken};visitor_data=${pot.visitorData}`);
+      hasPoToken = true;
     } else if (process.env.YOUTUBE_PO_TOKEN && process.env.YOUTUBE_VISITOR_DATA) {
       console.log('Using manual PO Token from environment');
       args.push('--extractor-args', `youtube:po_token=web+${process.env.YOUTUBE_PO_TOKEN};visitor_data=${process.env.YOUTUBE_VISITOR_DATA}`);
+      hasPoToken = true;
     }
 
-    if (fs.existsSync(cookiesPath)) {
+    // Only inject cookies if NO PO Token is used.
+    // Sending authenticated cookies with an anonymous PO Token causes a session mismatch and triggers bot detection!
+    if (!hasPoToken && fs.existsSync(cookiesPath)) {
 
       args.push('--cookies', cookiesPath);
     }
@@ -253,16 +258,19 @@ const downloadAudio = async (req, res) => {
       ffmpegLocation: ffmpegDir,
     };
 
+    let hasPoTokenForDownload = false;
     const pot = await fetchPoToken(url);
     if (pot && pot.poToken && pot.visitorData) {
       console.log('Successfully received PO Token from provider for download!');
       ytOptions.extractorArgs = `youtube:po_token=web+${pot.poToken};visitor_data=${pot.visitorData}`;
+      hasPoTokenForDownload = true;
     } else if (process.env.YOUTUBE_PO_TOKEN && process.env.YOUTUBE_VISITOR_DATA) {
       console.log('Using manual PO Token from environment for download');
       ytOptions.extractorArgs = `youtube:po_token=web+${process.env.YOUTUBE_PO_TOKEN};visitor_data=${process.env.YOUTUBE_VISITOR_DATA}`;
+      hasPoTokenForDownload = true;
     }
 
-    if (fs.existsSync(cookiesPath)) {
+    if (!hasPoTokenForDownload && fs.existsSync(cookiesPath)) {
 
       ytOptions.cookies = cookiesPath;
     }
