@@ -4,10 +4,37 @@ const fs = require('fs');
 const os = require('os');
 const { promisify } = require('util');
 const { exec, execFile } = require('child_process');
-const { generate } = require('youtube-po-token-generator');
-
 
 const execAsync = promisify(exec);
+
+async function fetchPoToken(url) {
+  try {
+    const providerUrl = process.env.POT_PROVIDER_URL;
+    if (!providerUrl) {
+      console.log('No POT_PROVIDER_URL defined, skipping auto PO Token fetch');
+      return null;
+    }
+
+    console.log(`Fetching PO Token from external provider: ${providerUrl}...`);
+    const response = await fetch(`${providerUrl}/get_pot`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Provider returned status ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return {
+      visitorData: data.contentBinding || data.visitorData,
+      poToken: data.poToken
+    };
+  } catch (error) {
+    console.error('Failed to fetch PO Token:', error.message);
+    return null;
+  }
+}
 
 const isWindows = process.platform === 'win32';
 const ytDlpBinary = isWindows ? 'yt-dlp.exe' : 'yt-dlp';
@@ -122,18 +149,17 @@ const getInfo = async (req, res) => {
       '--js-runtimes', 'node',
     ];
 
-    try {
-      console.log('Generating PO Token...');
-      const { visitorData, poToken } = await generate();
-      console.log('Successfully generated PO Token and Visitor Data');
-      // Pass the tokens to yt-dlp
-      args.push('--extractor-args', `youtube:po_token=web+${poToken};visitor_data=${visitorData}`);
-    } catch (e) {
-      console.error('Warning: Failed to generate PO token (continuing without it):', e.message);
+    const pot = await fetchPoToken(url);
+    if (pot && pot.poToken && pot.visitorData) {
+      console.log('Successfully received PO Token from provider!');
+      args.push('--extractor-args', `youtube:po_token=web+${pot.poToken};visitor_data=${pot.visitorData}`);
+    } else if (process.env.YOUTUBE_PO_TOKEN && process.env.YOUTUBE_VISITOR_DATA) {
+      console.log('Using manual PO Token from environment');
+      args.push('--extractor-args', `youtube:po_token=web+${process.env.YOUTUBE_PO_TOKEN};visitor_data=${process.env.YOUTUBE_VISITOR_DATA}`);
     }
 
-
     if (fs.existsSync(cookiesPath)) {
+
       args.push('--cookies', cookiesPath);
     }
 
@@ -227,17 +253,17 @@ const downloadAudio = async (req, res) => {
       ffmpegLocation: ffmpegDir,
     };
 
-    try {
-      console.log('Generating PO Token for download...');
-      const { visitorData, poToken } = await generate();
-      console.log('Successfully generated PO Token and Visitor Data');
-      ytOptions.extractorArgs = `youtube:po_token=web+${poToken};visitor_data=${visitorData}`;
-    } catch (e) {
-      console.error('Warning: Failed to generate PO token for download:', e.message);
+    const pot = await fetchPoToken(url);
+    if (pot && pot.poToken && pot.visitorData) {
+      console.log('Successfully received PO Token from provider for download!');
+      ytOptions.extractorArgs = `youtube:po_token=web+${pot.poToken};visitor_data=${pot.visitorData}`;
+    } else if (process.env.YOUTUBE_PO_TOKEN && process.env.YOUTUBE_VISITOR_DATA) {
+      console.log('Using manual PO Token from environment for download');
+      ytOptions.extractorArgs = `youtube:po_token=web+${process.env.YOUTUBE_PO_TOKEN};visitor_data=${process.env.YOUTUBE_VISITOR_DATA}`;
     }
 
-
     if (fs.existsSync(cookiesPath)) {
+
       ytOptions.cookies = cookiesPath;
     }
 
