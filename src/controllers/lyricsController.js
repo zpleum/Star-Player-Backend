@@ -1,20 +1,27 @@
 function parseLrcToSegments(syncedLyrics) {
   const lines = syncedLyrics.split('\n');
   const segments = [];
-  const regex = /\[(\d{2}):(\d{2}\.\d{2,3})\](.*)/;
+  // Match any [mm:ss], [m:ss], [mm:ss.xx], [mm:ss.xxx], etc.
+  const regex = /\[(\d{1,3}):(\d{1,2}(?:\.\d+)?)\]/;
 
   for (const line of lines) {
     const match = regex.exec(line);
     if (match) {
       const minutes = parseInt(match[1], 10);
       const seconds = parseFloat(match[2]);
-      const text = match[3].trim();
+      
+      // Strip all timestamp tags from the line to get the clean text
+      const text = line.replace(/\[\d{1,3}:\d{1,2}(?:\.\d+)?\]/g, '').trim();
+      
       if (text) {
         const time = minutes * 60 + seconds;
         segments.push({ start: time, end: time + 5, text });
       }
     }
   }
+
+  // Sort by start time just in case
+  segments.sort((a, b) => a.start - b.start);
 
   // Fix end times
   for (let i = 0; i < segments.length - 1; i++) {
